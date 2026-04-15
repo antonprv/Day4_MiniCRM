@@ -1,0 +1,64 @@
+# ========================
+# Build output
+# ========================
+src/*/bin/
+src/*/obj/
+src/**/bin/
+src/**/obj/
+src/**/Artifacts
+
+# ========================
+# Visual Studio
+# ========================
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# ========================
+# NuGet
+# ========================
+src/**/packages/
+src/**/*.nupkg
+src/**/project.lock.json
+src/**/project.fragment.lock.json
+
+# ========================
+# .NET
+# ========================
+*.dll
+*.exe
+!src/**/*.exe.config
+
+# ========================
+# Logs & temp
+# ========================
+*.log
+*.tmp
+*.temp
+[Tt]emp/
+[Ll]ogs/
+
+# ========================
+# OS
+# ========================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ========================
+# Rider / ReSharper
+# ========================
+.idea/
+_ReSharper*/
+*.DotSettings.user
