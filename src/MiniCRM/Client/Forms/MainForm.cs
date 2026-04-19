@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.ServiceModel;
-using System.Threading;
 using System.Windows.Forms;
-
-using MiniCRM.Client.Interop;
-using MiniCRM.Client.Services;
+using MiniCRM.Client.Controllers;
+using MiniCRM.Client.Infrastructure;
 using MiniCRM.Core.Contracts;
 using MiniCRM.Core.Models;
 
@@ -13,34 +12,50 @@ namespace MiniCRM.Client.Forms
 {
     public partial class MainForm : Form
     {
-        private CrmServiceClient _service;
+        private readonly ClientsController _controller = new ClientsController();
+        private readonly Debounce _debounce = new Debounce();
 
         private string _defaultSearchText;
 
-        private List<CRMClient> _allClients = new List<CRMClient>();
-        private int _requestId;
+        // search button color
+        // ------------
+        private readonly Color _cancelActiveColor = Color.DimGray;
+        private readonly Color _cancelInctiveColor = Color.WhiteSmoke;
+        // ------------
 
         public MainForm()
         {
             InitializeComponent();
 
-            _service = new CrmServiceClient();
             _defaultSearchText = txtSearch.Text;
         }
 
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-
             SetupGrid();
             LoadClients();
         }
 
-        #region Forms Events
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            base.OnFormClosed(e);
+            _controller.Dispose();
+            _debounce.Dispose();
+        }
+
+        #region Events
 
         private void TxtSearch_Click(object sender, EventArgs e)
         {
             txtSearch.Text = string.Empty;
+        }
+
+        private void TxtSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter) return;
+
+            BtnSearch_Click(sender, e);
         }
 
         private void TxtSearch_Leave(object sender, EventArgs e)
@@ -51,11 +66,28 @@ namespace MiniCRM.Client.Forms
 
         private void BtnSearch_Click(object sender, EventArgs e)
         {
-            if (txtSearch.Text == _defaultSearchText ||
-                txtSearch.Text == string.Empty)
+            var text = txtSearch.Text;
+
+            if (text == _defaultSearchText || string.IsNullOrWhiteSpace(text))
+            {
                 LoadClients();
-            else
-                LoadClients(txtSearch.Text);
+                DisableCancelButton();
+                return;
+            }
+
+            EnableCancelButton();
+
+            // Фильтруем по кэшу с debounce 300мс
+            SetLoading(true);
+            _debounce.Run(300, () =>
+                _controller.Filter(
+                    query: text,
+                    onSuccess: result => UI(() =>
+                    {
+                        dgvClients.DataSource = result;
+                        SetLoading(false);
+                    }),
+                    onError: ex => ShowError(ex, "Ошибка фильтрации")));
         }
 
         private void BtnAdd_Click(object sender, EventArgs e)
@@ -63,18 +95,20 @@ namespace MiniCRM.Client.Forms
             using (var form = new ClientEditForm())
             {
                 if (form.ShowDialog() != DialogResult.OK) return;
-                try
-                {
-                    using (var svc = new CrmServiceClient())
-                        svc.AddClient(form.Result);
-                    LoadClients();
-                }
-                catch (FaultException<ClientFault> ex)
-                {
-                    MessageBox.Show(ex.Detail.Message, "Ошибка",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+
+                SetLoading(true);
+                _controller.AddClient(
+                    client: form.Result,
+                    onSuccess: () => UI(LoadClients),    // после добавления — перезагружаем список
+                    onError: ex => ShowError(ex, "Ошибка добавления"));
             }
+        }
+
+        private void DgvClients_CellMouseDoubleClick(
+            object sender, 
+            DataGridViewCellMouseEventArgs e)
+        {
+            BtnEdit_Click(sender, e);
         }
 
         private void BtnEdit_Click(object sender, EventArgs e)
@@ -85,17 +119,12 @@ namespace MiniCRM.Client.Forms
             using (var form = new ClientEditForm(client))
             {
                 if (form.ShowDialog() != DialogResult.OK) return;
-                try
-                {
-                    using (var svc = new CrmServiceClient())
-                        svc.UpdateClient(form.Result);
-                    LoadClients();
-                }
-                catch (FaultException<ClientFault> ex)
-                {
-                    MessageBox.Show(ex.Detail.Message, "Ошибка",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+
+                SetLoading(true);
+                _controller.UpdateClient(
+                    client: form.Result,
+                    onSuccess: () => UI(LoadClients),
+                    onError: ex => ShowError(ex, "Ошибка обновления"));
             }
         }
 
@@ -110,94 +139,44 @@ namespace MiniCRM.Client.Forms
 
             if (confirm != DialogResult.Yes) return;
 
-            try
-            {
-                using (var svc = new CrmServiceClient())
-                    svc.DeleteClient(client.Id);
-                LoadClients();
-            }
-            catch (FaultException<ClientFault> ex)
-            {
-                MessageBox.Show(ex.Detail.Message, "Ошибка",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            SetLoading(true);
+            _controller.DeleteClient(
+                clientId: client.Id,
+                onSuccess: () => UI(LoadClients),
+                onError: ex => ShowError(ex, "Ошибка удаления"));
+        }
+
+        private void BtnCancelSearch_Click(object sender, EventArgs e)
+        {
+            DisableCancelButton();
+            LoadClients();
         }
 
         #endregion
 
-        #region Clients Loading
+        #region Loading
 
-        private void LoadClients(string query = null)
+        private void LoadClients()
         {
-            var requestId = Interlocked.Increment(ref _requestId);
-
             SetLoading(true);
-
-            _service.GetAllClientsAsync(
-                onComplete: clients =>
+            _controller.LoadClients(
+                onSuccess: clients => UI(() =>
                 {
-                    if (requestId != _requestId)
-                        return; // устаревший ответ
-
-                    _allClients = clients;
-
-                    if (string.IsNullOrWhiteSpace(query))
-                    {
-                        UI(() =>
-                        {
-                            dgvClients.DataSource = _allClients;
-                            SetLoading(false);
-                        });
-
-                        return;
-                    }
-
-                    StartFilterThread(clients, query, requestId);
-                },
-
-                onError: ex =>
-                {
-                    if (requestId != _requestId)
-                        return;
-
-                    ShowError(ex, "Ошибка");
-                });
-        }
-
-        private void StartFilterThread(List<CRMClient> clients, string query, int requestId)
-        {
-            var snapshot = new List<CRMClient>(clients);
-
-            var thread = new Thread(() =>
-            {
-                try
-                {
-                    var filtered = ClientFilterInterop.Filter(snapshot, query);
-
-                    if (requestId != _requestId)
-                        return;
-
-                    UI(() =>
-                    {
-                        dgvClients.DataSource = filtered;
-                        SetLoading(false);
-                    });
-                }
-                catch (Exception ex)
-                {
-                    if (requestId != _requestId)
-                        return;
-
-                    ShowError(ex, "Ошибка фильтрации");
-                }
-            });
-
-            thread.IsBackground = true;
-            thread.Start();
+                    dgvClients.DataSource = clients;
+                    SetLoading(false);
+                }),
+                onError: ex => ShowError(ex, "Ошибка загрузки"));
         }
 
         private void SetLoading(bool isLoading)
         {
+            // SetLoading может вызываться из фонового потока - защищаемся
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(() => SetLoading(isLoading)));
+                return;
+            }
+
             btnAdd.Enabled = !isLoading;
             btnEdit.Enabled = !isLoading;
             btnDelete.Enabled = !isLoading;
@@ -208,6 +187,7 @@ namespace MiniCRM.Client.Forms
 
         #region Thread helpers
 
+        // Безопасный переход на UI-поток
         private void UI(Action action)
         {
             if (IsDisposed) return;
@@ -226,15 +206,21 @@ namespace MiniCRM.Client.Forms
 
             UI(() =>
             {
-                MessageBox.Show(msg, title,
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox
+                .Show(
+                    msg, 
+                    title,
+                    MessageBoxButtons.OK, 
+                    MessageBoxIcon.Error
+                    );
+
                 SetLoading(false);
             });
         }
 
         #endregion
 
-        #region Visual Helper Functions
+        #region Visual helpers
 
         private void SetupGrid()
         {
@@ -264,6 +250,18 @@ namespace MiniCRM.Client.Forms
                 return null;
             }
             return dgvClients.SelectedRows[0].DataBoundItem as CRMClient;
+        }
+
+        private void EnableCancelButton()
+        {
+            btnCancelSearch.Enabled = true;
+            btnCancelSearch.BackColor = _cancelActiveColor;
+        }
+
+        private void DisableCancelButton()
+        {
+            btnCancelSearch.Enabled = false;
+            btnCancelSearch.BackColor = _cancelInctiveColor;
         }
 
         #endregion

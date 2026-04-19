@@ -35,6 +35,7 @@
             this.btnAdd = new System.Windows.Forms.ToolStripButton();
             this.btnEdit = new System.Windows.Forms.ToolStripButton();
             this.btnDelete = new System.Windows.Forms.ToolStripButton();
+            this.btnCancelSearch = new System.Windows.Forms.ToolStripButton();
             this.dgvClients = new System.Windows.Forms.DataGridView();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvClients)).BeginInit();
@@ -48,7 +49,8 @@
             this.btnSearch,
             this.btnAdd,
             this.btnEdit,
-            this.btnDelete});
+            this.btnDelete,
+            this.btnCancelSearch});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1054, 32);
@@ -61,6 +63,7 @@
             this.txtSearch.Size = new System.Drawing.Size(350, 32);
             this.txtSearch.Text = "Найти клиента...";
             this.txtSearch.Leave += new System.EventHandler(this.TxtSearch_Leave);
+            this.txtSearch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TxtSearch_KeyDown);
             this.txtSearch.Click += new System.EventHandler(this.TxtSearch_Click);
             // 
             // btnSearch
@@ -104,6 +107,19 @@
             this.btnDelete.Text = "Удалить";
             this.btnDelete.Click += new System.EventHandler(this.BtnDelete_Click);
             // 
+            // btnCancelSearch
+            // 
+            this.btnCancelSearch.BackColor = System.Drawing.Color.White;
+            this.btnCancelSearch.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.btnCancelSearch.Enabled = false;
+            this.btnCancelSearch.ForeColor = System.Drawing.Color.WhiteSmoke;
+            this.btnCancelSearch.Image = ((System.Drawing.Image)(resources.GetObject("btnCancelSearch.Image")));
+            this.btnCancelSearch.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnCancelSearch.Name = "btnCancelSearch";
+            this.btnCancelSearch.Size = new System.Drawing.Size(148, 29);
+            this.btnCancelSearch.Text = "Отменить поиск";
+            this.btnCancelSearch.Click += new System.EventHandler(this.BtnCancelSearch_Click);
+            // 
             // dgvClients
             // 
             this.dgvClients.AllowUserToAddRows = false;
@@ -116,6 +132,7 @@
             this.dgvClients.RowTemplate.Height = 28;
             this.dgvClients.Size = new System.Drawing.Size(1054, 466);
             this.dgvClients.TabIndex = 1;
+            this.dgvClients.CellMouseDoubleClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.DgvClients_CellMouseDoubleClick);
             // 
             // MainForm
             // 
@@ -143,6 +160,7 @@
         private System.Windows.Forms.ToolStripButton btnEdit;
         private System.Windows.Forms.ToolStripButton btnDelete;
         private System.Windows.Forms.DataGridView dgvClients;
+        private System.Windows.Forms.ToolStripButton btnCancelSearch;
     }
 }
 

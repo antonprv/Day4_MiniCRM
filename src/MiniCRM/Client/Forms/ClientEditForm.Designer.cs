@@ -64,6 +64,7 @@
             this.txtFullName.Name = "txtFullName";
             this.txtFullName.Size = new System.Drawing.Size(404, 28);
             this.txtFullName.TabIndex = 1;
+            this.txtFullName.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TxtFullName_KeyDown);
             // 
             // label2
             // 

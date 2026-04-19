@@ -81,5 +81,13 @@ namespace MiniCRM.Client.Forms
             DialogResult = DialogResult.Cancel;
             Close();
         }
+
+        private void TxtFullName_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+                BtnSave_Click(sender, e);
+            else if (e.KeyCode == Keys.Escape)
+                BtnCancel_Click(sender, e);
+        }
     }
 }
