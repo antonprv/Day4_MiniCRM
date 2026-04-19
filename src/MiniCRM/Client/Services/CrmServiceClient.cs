@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ServiceModel;
-
+using System.Threading;
 using MiniCRM.Core.Contracts;
 using MiniCRM.Core.Models;
 
@@ -18,6 +18,33 @@ namespace MiniCRM.Client.Services
             var endpoint = new EndpointAddress("net.tcp://localhost:8080/ClientService");
             _factory = new ChannelFactory<IClientService>(binding, endpoint);
             _channel = _factory.CreateChannel();
+        }
+
+        /// <summary>
+        /// Gets all clients in in background thread.
+        /// </summary>
+        /// <param name="onComplete"></param>
+        /// <param name="onError"></param>
+        public void GetAllClientsAsync(
+            Action <List<CRMClient>> onComplete,
+            Action <Exception> onError
+            )
+        {
+            var thread = new Thread(_ =>
+            {
+                try
+                {
+                    var result = _channel.GetAllClients();
+                    onComplete.Invoke(result);
+                }
+                catch (Exception ex)
+                {
+                    onError.Invoke(ex);
+                }
+            });
+
+            thread.IsBackground = true;
+            thread.Start();
         }
 
         public List<CRMClient> GetAllClients()

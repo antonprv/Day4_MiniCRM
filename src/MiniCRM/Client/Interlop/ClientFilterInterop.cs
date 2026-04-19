@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-
+using System.Threading;
 using CRMClient = MiniCRM.Core.Models.CRMClient;
 
 namespace MiniCRM.Client.Interop
@@ -10,6 +10,28 @@ namespace MiniCRM.Client.Interop
     {
         private const int MaxStringLength = 99;
         private const int BufferSize = 100;
+
+        public static void FilterAsync(
+            List<CRMClient> clients, 
+            string query,
+            Action <List<CRMClient>> onComplete,
+            Action <Exception> onError
+
+            )
+        {
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                try
+                {
+                    var result = Filter(clients, query);
+                    onComplete.Invoke(result);
+                }
+                catch (Exception ex)
+                {
+                    onError(ex);
+                }
+            });
+        }
 
         public static List<CRMClient> Filter(List<CRMClient> clients, string query)
         {

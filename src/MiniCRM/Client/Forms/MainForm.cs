@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ServiceModel;
+using System.Threading;
 using System.Windows.Forms;
 
 using MiniCRM.Client.Interop;
@@ -12,13 +13,18 @@ namespace MiniCRM.Client.Forms
 {
     public partial class MainForm : Form
     {
+        private CrmServiceClient _service;
+
         private string _defaultSearchText;
-        private List<CRMClient> _allClients;
+
+        private List<CRMClient> _allClients = new List<CRMClient>();
+        private int _requestId;
 
         public MainForm()
         {
             InitializeComponent();
 
+            _service = new CrmServiceClient();
             _defaultSearchText = txtSearch.Text;
         }
 
@@ -45,7 +51,11 @@ namespace MiniCRM.Client.Forms
 
         private void BtnSearch_Click(object sender, EventArgs e)
         {
-            LoadClients(txtSearch.Text);
+            if (txtSearch.Text == _defaultSearchText ||
+                txtSearch.Text == string.Empty)
+                LoadClients();
+            else
+                LoadClients(txtSearch.Text);
         }
 
         private void BtnAdd_Click(object sender, EventArgs e)
@@ -119,30 +129,107 @@ namespace MiniCRM.Client.Forms
 
         private void LoadClients(string query = null)
         {
-            try
-            {
-                using (var svc = new CrmServiceClient())
-                    _allClients = svc.GetAllClients();
+            var requestId = Interlocked.Increment(ref _requestId);
 
-                // Если есть запрос — фильтруем через C++ DLL
-                // Если нет — показываем всё
-                var toShow = string.IsNullOrWhiteSpace(query)
-                    ? _allClients
-                    : ClientFilterInterop.Filter(_allClients, query);
+            SetLoading(true);
 
-                dgvClients.DataSource = null;
-                dgvClients.DataSource = toShow;
-            }
-            catch (FaultException<ClientFault> ex)
+            _service.GetAllClientsAsync(
+                onComplete: clients =>
+                {
+                    if (requestId != _requestId)
+                        return; // устаревший ответ
+
+                    _allClients = clients;
+
+                    if (string.IsNullOrWhiteSpace(query))
+                    {
+                        UI(() =>
+                        {
+                            dgvClients.DataSource = _allClients;
+                            SetLoading(false);
+                        });
+
+                        return;
+                    }
+
+                    StartFilterThread(clients, query, requestId);
+                },
+
+                onError: ex =>
+                {
+                    if (requestId != _requestId)
+                        return;
+
+                    ShowError(ex, "Ошибка");
+                });
+        }
+
+        private void StartFilterThread(List<CRMClient> clients, string query, int requestId)
+        {
+            var snapshot = new List<CRMClient>(clients);
+
+            var thread = new Thread(() =>
             {
-                MessageBox.Show(ex.Detail.Message, "Ошибка сервиса",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            catch (Exception ex)
+                try
+                {
+                    var filtered = ClientFilterInterop.Filter(snapshot, query);
+
+                    if (requestId != _requestId)
+                        return;
+
+                    UI(() =>
+                    {
+                        dgvClients.DataSource = filtered;
+                        SetLoading(false);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (requestId != _requestId)
+                        return;
+
+                    ShowError(ex, "Ошибка фильтрации");
+                }
+            });
+
+            thread.IsBackground = true;
+            thread.Start();
+        }
+
+        private void SetLoading(bool isLoading)
+        {
+            btnAdd.Enabled = !isLoading;
+            btnEdit.Enabled = !isLoading;
+            btnDelete.Enabled = !isLoading;
+            btnSearch.Enabled = !isLoading;
+        }
+
+        #endregion
+
+        #region Thread helpers
+
+        private void UI(Action action)
+        {
+            if (IsDisposed) return;
+
+            if (InvokeRequired)
+                BeginInvoke(action);
+            else
+                action();
+        }
+
+        private void ShowError(Exception ex, string title)
+        {
+            var msg = ex is FaultException<ClientFault> fault
+                ? fault.Detail.Message
+                : ex.Message;
+
+            UI(() =>
             {
-                MessageBox.Show($"Нет связи с сервисом:\n{ex.Message}", "Ошибка",
+                MessageBox.Show(msg, title,
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+                SetLoading(false);
+            });
         }
 
         #endregion
