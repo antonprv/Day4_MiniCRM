@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ServiceModel;
+
 using MiniCRM.Core.Models;
 
 namespace MiniCRM.Core.Contracts
@@ -9,19 +10,19 @@ namespace MiniCRM.Core.Contracts
     {
         [OperationContract]
         [FaultContract(typeof(ClientFault))]
-        List<Client> GetAllClients();
+        List<CRMClient> GetAllClients();
 
         [OperationContract]
         [FaultContract(typeof(ClientFault))]
-        Client GetClientById(int id);
+        CRMClient GetClientById(int id);
 
         [OperationContract]
         [FaultContract(typeof(ClientFault))]
-        int AddClient(Client client);
+        int AddClient(CRMClient client);
 
         [OperationContract]
         [FaultContract(typeof(ClientFault))]
-        void UpdateClient(Client client);
+        void UpdateClient(CRMClient client);
 
         [OperationContract]
         [FaultContract(typeof(ClientFault))]
@@ -29,6 +30,6 @@ namespace MiniCRM.Core.Contracts
 
         [OperationContract]
         [FaultContract(typeof(ClientFault))]
-        List<Client> SearchClients(string query);
+        List<CRMClient> SearchClients(string query);
     }
 }

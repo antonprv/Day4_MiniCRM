@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ServiceModel;
-using MiniCRM.Core.Contracts;
 
-using CRMClient = MiniCRM.Core.Models.Client;
+using MiniCRM.Core.Contracts;
+using MiniCRM.Core.Models;
 
 namespace MiniCRM.Client.Services
 {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ServiceModel;
+
 using MiniCRM.Core.Contracts;
 using MiniCRM.Core.Models;
 using MiniCRM.Service.Data;
@@ -14,12 +15,12 @@ namespace MiniCRM.Service.Services
         private static readonly DatabaseHelper Db =
             new DatabaseHelper("crm.db");
 
-        public List<Client> GetAllClients()
+        public List<CRMClient> GetAllClients()
         {
             return Execute(() => Db.GetAll(), "GET_ALL");
         }
 
-        public Client GetClientById(int id)
+        public CRMClient GetClientById(int id)
         {
             return Execute(() =>
             {
@@ -30,7 +31,7 @@ namespace MiniCRM.Service.Services
             }, "GET_BY_ID");
         }
 
-        public int AddClient(Client client)
+        public int AddClient(CRMClient client)
         {
             return Execute(() =>
             {
@@ -40,7 +41,7 @@ namespace MiniCRM.Service.Services
             }, "ADD");
         }
 
-        public void UpdateClient(Client client)
+        public void UpdateClient(CRMClient client)
         {
             Execute<object>(() =>
             {
@@ -59,7 +60,7 @@ namespace MiniCRM.Service.Services
             }, "DELETE");
         }
 
-        public List<Client> SearchClients(string query)
+        public List<CRMClient> SearchClients(string query)
         {
             return Execute(() =>
             {
@@ -71,7 +72,7 @@ namespace MiniCRM.Service.Services
 
         #region Helper Methods
 
-        private void ValidateClient(Client client)
+        private void ValidateClient(CRMClient client)
         {
             if (client == null)
                 ThrowFault("INVALID", "Клиент не может быть null");

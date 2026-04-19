@@ -5,7 +5,7 @@ namespace MiniCRM.Core.Models
 {
     public static class ModelsExtensions
     {
-        public static string GetDescription(this ClientStatus value)
+        public static string GetDescription(this CRMClientStatus value)
         {
             var field = value.GetType().GetField(value.ToString());
             var attr = field.GetCustomAttribute<DescriptionAttribute>();

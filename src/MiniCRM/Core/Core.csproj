@@ -71,8 +71,8 @@
   <ItemGroup>
     <Compile Include="Contracts\ClientFault.cs" />
     <Compile Include="Contracts\IClientService.cs" />
-    <Compile Include="Models\Client.cs" />
-    <Compile Include="Models\ClientStatus.cs" />
+    <Compile Include="Models\CRMClient.cs" />
+    <Compile Include="Models\CRMClientStatus.cs" />
     <Compile Include="Models\ModelsExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

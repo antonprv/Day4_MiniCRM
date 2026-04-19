@@ -60,6 +60,7 @@
             this.txtSearch.Name = "txtSearch";
             this.txtSearch.Size = new System.Drawing.Size(350, 32);
             this.txtSearch.Text = "Найти клиента...";
+            this.txtSearch.Leave += new System.EventHandler(this.TxtSearch_Leave);
             this.txtSearch.Click += new System.EventHandler(this.TxtSearch_Click);
             // 
             // btnSearch

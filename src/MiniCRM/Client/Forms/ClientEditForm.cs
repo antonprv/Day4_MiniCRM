@@ -3,7 +3,6 @@ using System.Linq;
 using System.Windows.Forms;
 
 using MiniCRM.Core.Models;
-using CRMClient = MiniCRM.Core.Models.Client;
 
 namespace MiniCRM.Client.Forms
 {
@@ -24,8 +23,8 @@ namespace MiniCRM.Client.Forms
         {
             base.OnLoad(e);
 
-            cmbStatus.DataSource = Enum.GetValues(typeof(ClientStatus))
-                .Cast<ClientStatus>()
+            cmbStatus.DataSource = Enum.GetValues(typeof(CRMClientStatus))
+                .Cast<CRMClientStatus>()
                 .Select(x => new
                 {
                     Value = x,
@@ -69,7 +68,7 @@ namespace MiniCRM.Client.Forms
                 Phone = txtPhone.Text.Trim(),
                 Email = txtEmail.Text.Trim(),
                 Company = txtCompany.Text.Trim(),
-                Status = (ClientStatus)cmbStatus.SelectedValue,
+                Status = (CRMClientStatus)cmbStatus.SelectedValue,
                 CreatedAt = _existing?.CreatedAt ?? DateTime.Now
             };
 

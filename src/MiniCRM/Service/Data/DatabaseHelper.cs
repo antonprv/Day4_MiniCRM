@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using Microsoft.Data.Sqlite;
+
 using MiniCRM.Core.Models;
 
 namespace MiniCRM.Service.Data
@@ -37,9 +39,9 @@ namespace MiniCRM.Service.Data
             }
         }
 
-        public List<Client> GetAll()
+        public List<CRMClient> GetAll()
         {
-            var result = new List<Client>();
+            var result = new List<CRMClient>();
             using (var conn = new SqliteConnection(_connectionString))
             {
                 conn.Open();
@@ -54,7 +56,7 @@ namespace MiniCRM.Service.Data
             return result;
         }
 
-        public Client GetById(int id)
+        public CRMClient GetById(int id)
         {
             using (var conn = new SqliteConnection(_connectionString))
             {
@@ -69,7 +71,7 @@ namespace MiniCRM.Service.Data
             }
         }
 
-        public int Insert(Client client)
+        public int Insert(CRMClient client)
         {
             using (var conn = new SqliteConnection(_connectionString))
             {
@@ -89,7 +91,7 @@ namespace MiniCRM.Service.Data
             }
         }
 
-        public void Update(Client client)
+        public void Update(CRMClient client)
         {
             using (var conn = new SqliteConnection(_connectionString))
             {
@@ -125,9 +127,9 @@ namespace MiniCRM.Service.Data
             }
         }
 
-        public List<Client> Search(string query)
+        public List<CRMClient> Search(string query)
         {
-            var result = new List<Client>();
+            var result = new List<CRMClient>();
             using (var conn = new SqliteConnection(_connectionString))
             {
                 conn.Open();
@@ -149,16 +151,16 @@ namespace MiniCRM.Service.Data
             return result;
         }
 
-        private Client MapReader(SqliteDataReader reader)
+        private CRMClient MapReader(SqliteDataReader reader)
         {
-            return new Client
+            return new CRMClient
             {
                 Id = reader.GetInt32(0),
                 FullName = reader.GetString(1),
                 Phone = reader.GetString(2),
                 Email = reader.GetString(3),
                 Company = reader.GetString(4),
-                Status = (ClientStatus)reader.GetInt32(5),
+                Status = (CRMClientStatus)reader.GetInt32(5),
                 CreatedAt = DateTime.Parse(reader.GetString(6))
             };
         }
