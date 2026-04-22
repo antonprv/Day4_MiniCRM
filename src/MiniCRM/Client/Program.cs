@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Windows.Forms;
+using MiniCRM.Client.Controllers;
 using MiniCRM.Client.Forms;
+using MiniCRM.Client.Infrastructure;
 
 namespace MiniCRM.Client
 {
@@ -11,7 +13,10 @@ namespace MiniCRM.Client
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+
+            var mainForm = new MainForm(new ClientsController(), new Debounce());
+
+            Application.Run(mainForm);
         }
     }
 }

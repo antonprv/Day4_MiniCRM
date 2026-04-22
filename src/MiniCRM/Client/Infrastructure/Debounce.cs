@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace MiniCRM.Client.Infrastructure
 {
-    class Debounce : IDisposable
+    public class Debounce : IDisposable
     {
         private Timer _timer;
         private readonly object _sync = new object();

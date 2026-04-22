@@ -12,8 +12,8 @@ namespace MiniCRM.Client.Forms
 {
     public partial class MainForm : Form
     {
-        private readonly ClientsController _controller = new ClientsController();
-        private readonly Debounce _debounce = new Debounce();
+        private readonly ClientsController _controller;
+        private readonly Debounce _debounce;
 
         private string _defaultSearchText;
 
@@ -23,11 +23,14 @@ namespace MiniCRM.Client.Forms
         private readonly Color _cancelInctiveColor = Color.WhiteSmoke;
         // ------------
 
-        public MainForm()
+        public MainForm(ClientsController controller, Debounce debounce)
         {
             InitializeComponent();
 
             _defaultSearchText = txtSearch.Text;
+
+            _controller = controller;
+            _debounce = debounce;
         }
 
         protected override void OnLoad(EventArgs e)
